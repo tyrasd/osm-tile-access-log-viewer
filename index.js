@@ -17,7 +17,12 @@ L.TileLayer.OsmTileAccessLogLayer = L.TileLayer.Canvas.extend({
         console.log("Indices created!")
     },
     drawTile: function(canvas, tilePoint, zoom) {
-        fData = this.options.data.search([tilePoint.x*256, tilePoint.y*256, (tilePoint.x+1)*256-1, (tilePoint.y+1)*256-1]).filter(function(d) { return d[0] === zoom+8 })
+        fData = this.options.data.search({
+            minX: tilePoint.x*256,
+            minY: tilePoint.y*256,
+            maxX: (tilePoint.x+1)*256-1,
+            maxY: (tilePoint.y+1)*256-1
+        }).filter(function(d) { return d[0] === zoom+8 })
 
         var ctx = canvas.getContext('2d');
         // draw something on the tile canvas
