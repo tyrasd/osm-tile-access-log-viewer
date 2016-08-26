@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OSM tile access logs viewer</title>
+    <meta charset="utf-8" />
+ 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ 
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+    <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+
+    <script src="rbush.js"></script>
+    <script src="leaflet-hash.js"></script>
+    <script src="TileLayer.Grayscale.js"></script>
+
+</head>
+<body>
+    <!-- add and init leaflet map -->
+    <div id="map" style="position:absolute; top:0; left:0; right:0; bottom:0;"></div>
+    <script>
+        var map = L.map('map', {
+            maxZoom: 19-8
+        }).setView([46.5, 11.5], 4);
+        var hash = new L.Hash(map);
+
+        L.tileLayer.grayscale('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'
+        }).addTo(map);
+    </script>
+
+
+    <!-- add and init file dropper, from http://html5demos.com/file-api -->
+    <style>
+        #map.hover {
+            opacity: 0.4;
+        }
+        #info {
+            position: absolute;
+            left: 60px;
+            top: 10px;
+            padding: 15px 25px;
+            background-color: rgba(200,200,0,0.5);
+        }
+        #intro.done {
+            display: none;
+        }
+        #processing {
+            display: none;
+        }
+        #processing.started {
+            display: block;
+        }
+        #processing.done {
+            display: none;
+        }
+        #legend {
+            display: none;
+        }
+        #legend.done {
+            display: block;
+        }
+        #status {
+            padding: 5px;
+            color: #fff;
+            background: #ccc;
+            display: none;
+        }
+        #status.fail {
+            background: #c00;
+            display: block;
+        }
+        #status.success {
+            background: #0c0;
+        }
+    </style>
+    <div id="info">
+        <p id="status">File API &amp; FileReader API not supported</p>
+        <div id="intro">Drag and drop an (unpacked) osm <a href="http://planet.openstreetmap.org/tile_logs/">tile access log</a> file here!</div>
+        <div id="processing">please wait …</div>
+        <div id="legend">
+            <div style="display: inline-block; height: 10px; width: 12px; background-color: rgb(253,224,221);"></div> 10 … 31<br>
+            <div style="display: inline-block; height: 10px; width: 12px; background-color: rgb(252,197,192);"></div> 32 … 99<br>
+            <div style="display: inline-block; height: 10px; width: 12px; background-color: rgb(250,159,181);"></div> 100 … 315<br>
+            <div style="display: inline-block; height: 10px; width: 12px; background-color: rgb(247,104,161);"></div> 316 … 999<br>
+            <div style="display: inline-block; height: 10px; width: 12px; background-color: rgb(221,52,151);"></div> 1,000 … 3,161<br>
+            <div style="display: inline-block; height: 10px; width: 12px; background-color: rgb(174,1,126);"></div> 3,162 … 9,999<br>
+            <div style="display: inline-block; height: 10px; width: 12px; background-color: rgb(122,1,119);"></div> 10,000 …
+        </div>
+    </div>
+    <script>
+        var holder = document.getElementsByTagName('body')[0],
+            state = document.getElementById('status'),
+            intro = document.getElementById('intro'),
+            processing = document.getElementById('processing'),
+            legend = document.getElementById('legend');
+
+        if (typeof window.FileReader === 'undefined') {
+            state.className = 'fail';
+        } else {
+            state.className = 'success';
+            state.innerHTML = 'File API &amp; FileReader available';
+        }
+         
+        holder.ondragover = function () { this.className = 'hover'; return false; };
+        holder.ondragend = function () { this.className = ''; return false; };
+        holder.ondrop = function (e) {
+            this.className = '';
+            e.preventDefault();
+            intro.className = 'done';
+            processing.className = 'started';
+
+            var file = e.dataTransfer.files[0],
+                reader = new FileReader();
+
+            reader.onload = function (event) {
+                console.log(event.target);
+                processing.className = 'done';
+                legend.className = 'done';
+
+                L.tileLayer.osmTileAccessLogLayer(event.target.result).addTo(map);
+            };
+            console.log(file);
+            reader.readAsText(file);
+
+            return false;
+        };
+    </script>
+
+
+    <script src="index.js"></script>
+    <script>
+        // 
+    </script>
+</body>
+</html>
