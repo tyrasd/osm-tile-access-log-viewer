@@ -5,24 +5,35 @@ L.TileLayer.OsmTileAccessLogLayer = L.TileLayer.Canvas.extend({
         data: null
     },
     initialize: function (data) {
-        console.log("Loaded data!")
+        console.time("parse data")
         data = data.split("\n")
         data.pop() // newline at the end
         data = data.map(function(line) {
-            return line.split(/[ \/]/).map(Number)
+            line = line.split(' ')
+            var coords = line[0].split('/')
+            return {
+              x: +coords[1],
+              y: +coords[2],
+              zoom: +coords[0],
+              count: +line[1]
+            }
         })
-        var tree = rbush(9, ['[1]', '[2]', '[1]', '[2]'])
+        console.timeEnd("parse data")
+        console.time("build indices")
+        var tree = rbush(9, ['.x', '.y', '.x', '.y'])
         tree.load(data)
         this.options.data = tree
-        console.log("Indices created!")
+        console.timeEnd("build indices")
     },
     drawTile: function(canvas, tilePoint, zoom) {
+        console.time("search data")
         fData = this.options.data.search({
             minX: tilePoint.x*256,
             minY: tilePoint.y*256,
             maxX: (tilePoint.x+1)*256-1,
             maxY: (tilePoint.y+1)*256-1
-        }).filter(function(d) { return d[0] === zoom+8 })
+        }).filter(function(d) { return d.zoom === zoom+8 })
+        console.timeEnd("search data")
 
         var ctx = canvas.getContext('2d');
         // draw something on the tile canvas
@@ -34,12 +45,12 @@ L.TileLayer.OsmTileAccessLogLayer = L.TileLayer.Canvas.extend({
         pixeldata[3] = 255
 
         fData.forEach(function(d) {
-            var cat = Math.max(Math.floor(2*Math.log(d[3])/Math.log(10))-1,0)
+            var cat = Math.max(Math.floor(2*Math.log(d.count)/Math.log(10))-1,0)
             cat = Math.min(cat, colorbrewer.length-1)
             pixeldata[0] = colorbrewer[cat][0]
             pixeldata[1] = colorbrewer[cat][1]
             pixeldata[2] = colorbrewer[cat][2]
-            ctx.putImageData( pixel, d[1]%256, d[2]%256 )
+            ctx.putImageData( pixel, d.x%256, d.y%256 )
         })
     }
 });

@@ -113,13 +113,14 @@
                 reader = new FileReader();
 
             reader.onload = function (event) {
-                console.log(event.target);
                 processing.className = 'done';
                 legend.className = 'done';
+                console.timeEnd("read file")
 
                 L.tileLayer.osmTileAccessLogLayer(event.target.result).addTo(map);
             };
             console.log(file);
+            console.time("read file")
             reader.readAsText(file);
 
             return false;
