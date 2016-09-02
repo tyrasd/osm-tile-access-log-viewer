@@ -4,20 +4,34 @@ L.TileLayer.OsmTileAccessLogLayer = L.TileLayer.Canvas.extend({
         maxZoom:19-8,
         data: null
     },
-    initialize: function (data) {
+    initialize: function (arrayBuffer) {
         console.time("parse data")
-        data = data.split("\n")
-        data.pop() // newline at the end
-        data = data.map(function(line) {
-            line = line.split(' ')
-            var coords = line[0].split('/')
-            return {
-              x: +coords[1],
-              y: +coords[2],
-              zoom: +coords[0],
-              count: +line[1]
+        var view = new Uint8Array(arrayBuffer)
+        var data = []
+        var currentInt = 0
+        var currentCoords = []
+        for (var i = 0; i<view.length; i++) {
+            switch (view[i]) {
+            default:
+              currentInt = currentInt*10 + (view[i] - 48 /*'0'*/)
+            break;
+            case 10: // '\n'
+                data.push({
+                    x: currentCoords[1],
+                    y: currentCoords[2],
+                    zoom: currentCoords[0],
+                    count: currentInt
+                })
+                currentCoords = []
+                currentInt = 0
+            break;
+            case 32: // ' '
+            case 47: // '/'
+                currentCoords.push(currentInt)
+                currentInt = 0
+            break;
             }
-        })
+        }
         console.timeEnd("parse data")
         console.time("build indices")
         var tree = rbush(9, ['.x', '.y', '.x', '.y'])

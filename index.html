@@ -115,13 +115,12 @@
             reader.onload = function (event) {
                 processing.className = 'done';
                 legend.className = 'done';
-                console.timeEnd("read file")
+                console.timeEnd("read file");
 
                 L.tileLayer.osmTileAccessLogLayer(event.target.result).addTo(map);
             };
-            console.log(file);
-            console.time("read file")
-            reader.readAsText(file);
+            console.time("read file");
+            reader.readAsArrayBuffer(file);
 
             return false;
         };
