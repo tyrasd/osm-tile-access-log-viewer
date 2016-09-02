@@ -17,8 +17,10 @@ L.TileLayer.OsmTileAccessLogLayer = L.TileLayer.Canvas.extend({
             break;
             case 10: // '\n'
                 data.push({
-                    x: currentCoords[1],
-                    y: currentCoords[2],
+                    minX: currentCoords[1],
+                    maxX: currentCoords[1],
+                    minY: currentCoords[2],
+                    maxY: currentCoords[2],
                     zoom: currentCoords[0],
                     count: currentInt
                 })
@@ -34,7 +36,7 @@ L.TileLayer.OsmTileAccessLogLayer = L.TileLayer.Canvas.extend({
         }
         console.timeEnd("parse data")
         console.time("build indices")
-        var tree = rbush(9, ['.x', '.y', '.x', '.y'])
+        var tree = rbush()
         tree.load(data)
         this.options.data = tree
         console.timeEnd("build indices")
@@ -64,7 +66,7 @@ L.TileLayer.OsmTileAccessLogLayer = L.TileLayer.Canvas.extend({
             pixeldata[0] = colorbrewer[cat][0]
             pixeldata[1] = colorbrewer[cat][1]
             pixeldata[2] = colorbrewer[cat][2]
-            ctx.putImageData( pixel, d.x%256, d.y%256 )
+            ctx.putImageData( pixel, d.minX%256, d.minY%256 )
         })
     }
 });
