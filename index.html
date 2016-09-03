@@ -11,7 +11,6 @@
     <script src="https://npmcdn.com/rbush@2.0.1/rbush.js"></script>
 
     <script src="leaflet-hash.js"></script>
-    <script src="TileLayer.Grayscale.js"></script>
 
 </head>
 <body>
@@ -23,7 +22,7 @@
         }).setView([46.5, 11.5], 4);
         var hash = new L.Hash(map);
 
-        L.tileLayer.grayscale('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="www.openstreetmap.org/copyright">OpenStreetMap contributors</a>'
         }).addTo(map);
     </script>
@@ -34,6 +33,11 @@
         #map.hover {
             opacity: 0.4;
         }
+        #map img.leaflet-tile {
+            filter: grayscale(1);
+            -webkit-filter: grayscale(1);
+        }
+
         #info {
             position: absolute;
             left: 60px;
