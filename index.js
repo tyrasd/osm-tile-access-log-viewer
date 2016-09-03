@@ -1,72 +1,32 @@
 L.TileLayer.OsmTileAccessLogLayer = L.TileLayer.Canvas.extend({
     options: {
-        async: false,
+        async: true,
         maxZoom:19-8,
         data: null
     },
+    messages: {},
+    worker: new Worker('worker.js'),
     initialize: function (arrayBuffer) {
-        console.time("parse data")
-        var view = new Uint8Array(arrayBuffer)
-        var data = []
-        var currentInt = 0
-        var currentCoords = []
-        for (var i = 0; i<view.length; i++) {
-            switch (view[i]) {
-            default:
-              currentInt = currentInt*10 + (view[i] - 48 /*'0'*/)
-            break;
-            case 10: // '\n'
-                data.push({
-                    minX: currentCoords[1],
-                    maxX: currentCoords[1],
-                    minY: currentCoords[2],
-                    maxY: currentCoords[2],
-                    zoom: currentCoords[0],
-                    count: currentInt
-                })
-                currentCoords = []
-                currentInt = 0
-            break;
-            case 32: // ' '
-            case 47: // '/'
-                currentCoords.push(currentInt)
-                currentInt = 0
-            break;
-            }
+        var self = this
+        this.worker.postMessage(arrayBuffer, [arrayBuffer])
+        this.worker.onmessage = function(e) {
+            var array = new Uint8Array(e.data.pixels)
+            var canvas = self.messages[e.data.tileId]
+            var ctx = canvas.getContext('2d')
+            var imagedata = ctx.getImageData(0, 0, self.options.tileSize, self.options.tileSize)
+            imagedata.data.set(array)
+            ctx.putImageData(imagedata, 0, 0)
+            self.tileDrawn(canvas)
         }
-        console.timeEnd("parse data")
-        console.time("build indices")
-        var tree = rbush()
-        tree.load(data)
-        this.options.data = tree
-        console.timeEnd("build indices")
     },
     drawTile: function(canvas, tilePoint, zoom) {
-        console.time("search data")
-        fData = this.options.data.search({
-            minX: tilePoint.x*256,
-            minY: tilePoint.y*256,
-            maxX: (tilePoint.x+1)*256-1,
-            maxY: (tilePoint.y+1)*256-1
-        }).filter(function(d) { return d.zoom === zoom+8 })
-        console.timeEnd("search data")
-
-        var ctx = canvas.getContext('2d');
-        // draw something on the tile canvas
-        var pixel = ctx.createImageData(1,1);
-        var pixeldata = pixel.data;
-
-        var colorbrewer = [[253,224,221],[252,197,192],[250,159,181],[247,104,161],[221,52,151],[174,1,126],[122,1,119]];
-
-        pixeldata[3] = 255
-
-        fData.forEach(function(d) {
-            var cat = Math.max(Math.floor(2*Math.log(d.count)/Math.log(10))-1,0)
-            cat = Math.min(cat, colorbrewer.length-1)
-            pixeldata[0] = colorbrewer[cat][0]
-            pixeldata[1] = colorbrewer[cat][1]
-            pixeldata[2] = colorbrewer[cat][2]
-            ctx.putImageData( pixel, d.minX%256, d.minY%256 )
+        var tileId=tilePoint.x+":"+tilePoint.y+":"+zoom
+        this.messages[tileId]=canvas
+        this.worker.postMessage({
+            tileId: tileId,
+            zoom: zoom,
+            tilePoint: tilePoint,
+            tileSize: this.options.tileSize
         })
     }
 });
