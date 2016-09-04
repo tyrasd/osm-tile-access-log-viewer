@@ -1,8 +1,10 @@
 importScripts('rbush.js')
 
-var tree = null;
+var tree = null
+var tileQueue = []
 
-self.addEventListener('message', function(e) {
+self.addEventListener('message', handler, false)
+function handler(e) {
     if (e.data.x instanceof ArrayBuffer) {
         // initialize with file content
         console.time("load data")
@@ -27,10 +29,12 @@ self.addEventListener('message', function(e) {
         tree = rbush()
         tree.load(data)
         console.timeEnd("build indices")
+        tileQueue.forEach(handler)
+        tileQueue = null
     } else {
         if (tree === null) {
-            return;
-            // todo: add requests to queue to be worked on after tree is ready
+            tileQueue.push(e)
+            return
         }
         // render tile
         var zoom = e.data.zoom
@@ -73,4 +77,4 @@ self.addEventListener('message', function(e) {
         self.postMessage(data, [data.pixels])
         console.timeEnd("send data")
     }
-}, false)
+}
