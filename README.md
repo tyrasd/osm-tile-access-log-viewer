@@ -3,6 +3,8 @@ osm-tile-access-log-viewer
 
 Visualizes tile logs from [planet.osm.org/tile_logs](https://planet.openstreetmap.org/tile_logs).
 
+More info, and technical details are found in this [blog article](http://www.openstreetmap.org/user/tyr_asd/diary/39434).
+
 See Also
 --------
 
