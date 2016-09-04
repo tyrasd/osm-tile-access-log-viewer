@@ -47,7 +47,7 @@ L.TileLayer.OsmTileAccessLogLayer = L.TileLayer.Canvas.extend({
     drawTile: function(canvas, tilePoint, zoom) {
         var tileId=tilePoint.x+":"+tilePoint.y+":"+zoom
         this.canvasCache[tileId]=canvas
-        var worker = this.workers[tilePoint.x % this.numWorkers]
+        var worker = this.workers[((tilePoint.x % this.numWorkers) + this.numWorkers) % this.numWorkers]
         worker.postMessage({
             tileId: tileId,
             zoom: zoom,
