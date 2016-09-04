@@ -29,6 +29,7 @@ function handler(e) {
         tree = rbush()
         tree.load(data)
         console.timeEnd("build indices")
+        self.postMessage('building spatial index')
         tileQueue.forEach(handler)
         tileQueue = null
     } else {

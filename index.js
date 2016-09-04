@@ -8,12 +8,17 @@ L.TileLayer.OsmTileAccessLogLayer = L.TileLayer.Canvas.extend({
     parserWorker: new Worker('parser.js'),
     numWorkers: navigator.hardwareConcurrency || 1,
     workers: [],
-    initialize: function (arrayBuffer) {
+    initialize: function (arrayBuffer, doneCallback) {
         var self = this
         console.timeEnd("parse data by worker")
         this.workers = Array.apply(null, new Array(this.numWorkers)).map(function() {return new Worker('worker.js')})
         this.parserWorker.postMessage({numWorkers:this.numWorkers, data:arrayBuffer}, [arrayBuffer])
         this.parserWorker.onmessage = function(e) {
+            if (typeof e.data === 'string') {
+                var processingDiv = document.getElementById('processing')
+                processingDiv.textContent = e.data
+                return
+            }
             console.timeEnd("parse data by worker")
 
             self.workers.forEach(function(worker, index) {
@@ -22,6 +27,13 @@ L.TileLayer.OsmTileAccessLogLayer = L.TileLayer.Canvas.extend({
             })
         }
         function tileHandler(e) {
+            if (typeof e.data === 'string') {
+                var processingDiv = document.getElementById('processing')
+                processingDiv.count = (processingDiv.count || 0)+1
+                processingDiv.textContent = e.data + ' (' + Math.round(100*processingDiv.count/self.numWorkers) + '%)'
+                if (doneCallback && processingDiv.count == self.numWorkers) doneCallback()
+                return
+            }
             var array = new Uint8Array(e.data.pixels)
             var canvas = self.canvasCache[e.data.tileId]
             delete self.canvasCache[e.data.tileId]
@@ -44,6 +56,6 @@ L.TileLayer.OsmTileAccessLogLayer = L.TileLayer.Canvas.extend({
         })
     }
 });
-L.tileLayer.osmTileAccessLogLayer = function(data) {
-    return new L.TileLayer.OsmTileAccessLogLayer(data);
+L.tileLayer.osmTileAccessLogLayer = function(data, doneCallback) {
+    return new L.TileLayer.OsmTileAccessLogLayer(data, doneCallback);
 }

@@ -1,4 +1,5 @@
 self.addEventListener('message', function(e) {
+  self.postMessage('parsing')
     console.time("parse data")
     var view = new Uint8Array(e.data.data)
     var dataX = Array.apply(null, new Array(e.data.numWorkers)).map(function() {return []})
@@ -45,4 +46,5 @@ self.addEventListener('message', function(e) {
         [dataX, dataY, dataZ, dataC].reduce(function (a,b) {return a.concat(b)}, [])
     )
     console.timeEnd("send data")
+    self.postMessage('build spatial index')
 }, false)

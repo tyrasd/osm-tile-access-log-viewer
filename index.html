@@ -116,11 +116,12 @@
                 reader = new FileReader();
 
             reader.onload = function (event) {
-                processing.className = 'done';
-                legend.className = 'done';
                 console.timeEnd("read file");
 
-                L.tileLayer.osmTileAccessLogLayer(event.target.result).addTo(map);
+                L.tileLayer.osmTileAccessLogLayer(event.target.result, function() {
+                    processing.className = 'done';
+                    legend.className = 'done';
+                }).addTo(map);
             };
             console.time("read file");
             reader.readAsArrayBuffer(file);
