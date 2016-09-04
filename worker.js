@@ -3,10 +3,10 @@ importScripts('rbush.js')
 var tree = null;
 
 self.addEventListener('message', function(e) {
-    if (e.data instanceof ArrayBuffer) {
+    if (e.data.data instanceof ArrayBuffer) {
         // initialize with file content
         console.time("parse data")
-        var view = new Uint8Array(e.data)
+        var view = new Uint8Array(e.data.data)
         var data = []
         var currentInt = 0
         var currentCoords = []
@@ -16,14 +16,16 @@ self.addEventListener('message', function(e) {
               currentInt = currentInt*10 + (view[i] - 48 /*'0'*/)
             break;
             case 10: // '\n'
-                data.push({
-                    minX: currentCoords[1],
-                    maxX: currentCoords[1],
-                    minY: currentCoords[2],
-                    maxY: currentCoords[2],
-                    zoom: currentCoords[0],
-                    count: currentInt
-                })
+                if (~~(currentCoords[1]/256)%4 === e.data.tiles) {
+                    data.push({
+                        minX: currentCoords[1],
+                        maxX: currentCoords[1],
+                        minY: currentCoords[2],
+                        maxY: currentCoords[2],
+                        zoom: currentCoords[0],
+                        count: currentInt
+                    })
+                }
                 currentCoords = []
                 currentInt = 0
             break;
