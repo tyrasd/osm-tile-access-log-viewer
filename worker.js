@@ -3,45 +3,35 @@ importScripts('rbush.js')
 var tree = null;
 
 self.addEventListener('message', function(e) {
-    if (e.data.data instanceof ArrayBuffer) {
+    if (e.data.x instanceof ArrayBuffer) {
         // initialize with file content
-        console.time("parse data")
-        var view = new Uint8Array(e.data.data)
+        console.time("load data")
+        var viewX = new Uint32Array(e.data.x)
+        var viewY = new Uint32Array(e.data.y)
+        var viewZ = new Uint8Array(e.data.z)
+        var viewCount = new Uint32Array(e.data.count)
         var data = []
-        var currentInt = 0
-        var currentCoords = []
-        for (var i = 0; i<view.length; i++) {
-            switch (view[i]) {
-            default:
-              currentInt = currentInt*10 + (view[i] - 48 /*'0'*/)
-            break;
-            case 10: // '\n'
-                if (~~(currentCoords[1]/256)%4 === e.data.tiles) {
-                    data.push({
-                        minX: currentCoords[1],
-                        maxX: currentCoords[1],
-                        minY: currentCoords[2],
-                        maxY: currentCoords[2],
-                        zoom: currentCoords[0],
-                        count: currentInt
-                    })
-                }
-                currentCoords = []
-                currentInt = 0
-            break;
-            case 32: // ' '
-            case 47: // '/'
-                currentCoords.push(currentInt)
-                currentInt = 0
-            break;
-            }
+        for (var i=0; i<viewX.length; i++) {
+            data.push({
+                minX: viewX[i],
+                maxX: viewX[i],
+                minY: viewY[i],
+                maxY: viewY[i],
+                zoom: viewZ[i],
+                count: viewCount[i]
+            })
         }
-        console.timeEnd("parse data")
+        e.data = null; viewX = null; viewY = null; viewZ = null; viewCount = null // don't need
+        console.timeEnd("load data")
         console.time("build indices")
         tree = rbush()
         tree.load(data)
         console.timeEnd("build indices")
     } else {
+        if (tree === null) {
+            return;
+            // todo: add requests to queue to be worked on after tree is ready
+        }
         // render tile
         var zoom = e.data.zoom
         var tilePoint = e.data.tilePoint

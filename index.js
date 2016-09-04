@@ -5,23 +5,27 @@ L.TileLayer.OsmTileAccessLogLayer = L.TileLayer.Canvas.extend({
         data: null
     },
     messages: {},
+    parserWorker: new Worker('parser.js'),
     worker1: new Worker('worker.js'),
     worker2: new Worker('worker.js'),
     worker3: new Worker('worker.js'),
     worker4: new Worker('worker.js'),
-    initialize: function (arrayBuffer1) {
+    initialize: function (arrayBuffer) {
         var self = this
-        var arrayBuffer2 = arrayBuffer1.slice()
-        var arrayBuffer3 = arrayBuffer1.slice()
-        var arrayBuffer4 = arrayBuffer1.slice()
-        this.worker1.postMessage({tiles:1, data:arrayBuffer1}, [arrayBuffer1])
-        this.worker2.postMessage({tiles:2, data:arrayBuffer2}, [arrayBuffer2])
-        this.worker3.postMessage({tiles:3, data:arrayBuffer3}, [arrayBuffer3])
-        this.worker4.postMessage({tiles:0, data:arrayBuffer4}, [arrayBuffer4])
-        this.worker1.onmessage = tileHandler
-        this.worker2.onmessage = tileHandler
-        this.worker3.onmessage = tileHandler
-        this.worker4.onmessage = tileHandler
+        console.timeEnd("parse data by worker")
+        this.parserWorker.postMessage({numWorkers:4, data:arrayBuffer}, [arrayBuffer])
+        this.parserWorker.onmessage = function(e) {
+            console.timeEnd("parse data by worker")
+
+            self.worker1.postMessage(e.data[0], [e.data[0].x, e.data[0].y, e.data[0].z, e.data[0].count])
+            self.worker2.postMessage(e.data[1], [e.data[1].x, e.data[1].y, e.data[1].z, e.data[1].count])
+            self.worker3.postMessage(e.data[2], [e.data[2].x, e.data[2].y, e.data[2].z, e.data[2].count])
+            self.worker4.postMessage(e.data[3], [e.data[3].x, e.data[3].y, e.data[3].z, e.data[3].count])
+            self.worker1.onmessage = tileHandler
+            self.worker2.onmessage = tileHandler
+            self.worker3.onmessage = tileHandler
+            self.worker4.onmessage = tileHandler
+        }
         function tileHandler(e) {
             var array = new Uint8Array(e.data.pixels)
             var canvas = self.messages[e.data.tileId]
@@ -37,10 +41,10 @@ L.TileLayer.OsmTileAccessLogLayer = L.TileLayer.Canvas.extend({
         this.messages[tileId]=canvas
         var worker = null
         switch (tilePoint.x%4) {
-            case 1: worker = this.worker1; break
-            case 2: worker = this.worker2; break
-            case 3: worker = this.worker3; break
-            case 0: worker = this.worker4; break
+            case 0: worker = this.worker1; break
+            case 1: worker = this.worker2; break
+            case 2: worker = this.worker3; break
+            case 3: worker = this.worker4; break
         }
         worker.postMessage({
             tileId: tileId,
