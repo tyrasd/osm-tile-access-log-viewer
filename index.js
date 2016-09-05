@@ -10,7 +10,7 @@ L.TileLayer.OsmTileAccessLogLayer = L.TileLayer.Canvas.extend({
     workers: [],
     initialize: function (arrayBuffer, doneCallback) {
         var self = this
-        console.timeEnd("parse data by worker")
+        console.time("parse data by worker")
         this.workers = Array.apply(null, new Array(this.numWorkers)).map(function() {return new Worker('worker.js')})
         this.parserWorker.postMessage({numWorkers:this.numWorkers, data:arrayBuffer}, [arrayBuffer])
         this.parserWorker.onmessage = function(e) {
