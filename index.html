@@ -114,6 +114,13 @@
 
             var file = e.dataTransfer.files[0],
                 reader = new FileReader();
+                
+            if (!file.name.match(/\.txt$/)) {
+                intro.className = '';
+                processing.className = 'done';
+                alert("unpack the log file first!");
+                return;
+            }
 
             reader.onload = function (event) {
                 console.timeEnd("read file");
