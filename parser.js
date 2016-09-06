@@ -14,7 +14,7 @@ self.addEventListener('message', function(e) {
           currentInt = currentInt*10 + (view[i] - 48 /*'0'*/)
         break;
         case 10: // '\n'
-            var bin = ~~(currentCoords[1]/256)%4
+            var bin = ~~(currentCoords[1]/256) % e.data.numWorkers
             dataX[bin].push(currentCoords[1])
             dataY[bin].push(currentCoords[2])
             dataZ[bin].push(currentCoords[0])
