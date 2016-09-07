@@ -65,6 +65,9 @@
         #legend.done {
             display: block;
         }
+        #legend h3 {
+            margin-top: 0;
+        }
         #status {
             padding: 5px;
             color: #fff;
@@ -84,6 +87,7 @@
         <div id="intro">Drag and drop an (unpacked) osm <a href="http://planet.openstreetmap.org/tile_logs/">tile access log</a> file here!</div>
         <div id="processing">please wait …</div>
         <div id="legend">
+            <h3></h3>
             <div style="display: inline-block; height: 10px; width: 12px; background-color: rgb(253,224,221);"></div> 10 … 31<br>
             <div style="display: inline-block; height: 10px; width: 12px; background-color: rgb(252,197,192);"></div> 32 … 99<br>
             <div style="display: inline-block; height: 10px; width: 12px; background-color: rgb(250,159,181);"></div> 100 … 315<br>
@@ -123,6 +127,8 @@
                 processing.className = 'done';
                 alert("unpack the log file first!");
                 return;
+            } else {
+                legend.getElementsByTagName('h3')[0].textContent = file.name.match(/(.*)\.txt$/)[1]
             }
 
             reader.onload = function (event) {
@@ -142,8 +148,5 @@
 
 
     <script src="index.js"></script>
-    <script>
-        //
-    </script>
 </body>
 </html>
