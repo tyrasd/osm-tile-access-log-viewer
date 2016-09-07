@@ -1,11 +1,11 @@
 importScripts('rbush.js')
 
 var tree = null
-var tileQueue = []
+var requestQueue = []
 
 self.addEventListener('message', handler, false)
 function handler(e) {
-    if (e.data.x instanceof ArrayBuffer) {
+    if (e.data.request === 'init') {
         // initialize with file content
         console.time("load data")
         var viewX = new Uint32Array(e.data.x)
@@ -30,11 +30,11 @@ function handler(e) {
         tree.load(data)
         console.timeEnd("build indices")
         self.postMessage('building spatial index')
-        tileQueue.forEach(handler)
-        tileQueue = null
-    } else {
+        requestQueue.forEach(handler)
+        requestQueue = null
+    } else if (e.data.request === 'render') {
         if (tree === null) {
-            tileQueue.push(e)
+            requestQueue.push(e)
             return
         }
         // render tile
@@ -72,10 +72,31 @@ function handler(e) {
         console.timeEnd("render tile")
         console.time("send data")
         var data = {
+          answer: 'render',
           tileId: e.data.tileId,
           pixels: (new Uint32Array(pixels)).buffer
         }
         self.postMessage(data, [data.pixels])
         console.timeEnd("send data")
+    } else if (e.data.request === 'query') {
+        if (tree === null) {
+            requestQueue.push(e)
+            return
+        }
+        fData = tree.search({
+            minX: e.data.x,
+            maxX: e.data.x,
+            minY: e.data.y,
+            maxY: e.data.y
+        }).filter(function(d) { return d.zoom === e.data.z })
+        self.postMessage({
+            answer: 'query',
+            x: e.data.x,
+            y: e.data.y,
+            z: e.data.z,
+            result: (fData[0] || {}).count
+        })
+    } else {
+        throw "worker received unknown request"
     }
 }
