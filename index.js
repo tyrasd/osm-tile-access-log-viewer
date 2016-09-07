@@ -39,7 +39,7 @@ L.TileLayer.OsmTileAccessLogLayer = L.TileLayer.Canvas.extend({
                 })
                 //worker.onmessage(
                 map.openPopup(
-                    '<p>tile '+(self._map.getZoom()+8)+'/'+coords.x+'/'+coords.y+' accessed <span id="clicked-count">'+'?'+'</span> times</p>' +
+                    '<p>tile '+(self._map.getZoom()+8)+'/'+coords.x+'/'+coords.y+' was accessed <span id="clicked-count">'+'?'+'</span> times</p>' +
                     '<img src="https://a.tile.openstreetmap.org/'+(self._map.getZoom()+8)+'/'+coords.x+'/'+coords.y+'.png'+'" />',
                     e.latlng, {
                     minWidth:256
