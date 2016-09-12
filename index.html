@@ -46,6 +46,7 @@
             top: 10px;
             padding: 15px 25px;
             background-color: rgba(200,200,0,0.5);
+            max-width: 20em;
         }
         #info h1 {
             margin-top: 0.3em;
@@ -57,6 +58,9 @@
         }
         #intro.done {
             display: none;
+        }
+        #intro label {
+            cursor: pointer;
         }
         #processing {
             display: none;
@@ -103,7 +107,7 @@
         <h1>OSM tile access logs viewer</h1>
         <p class="about"><a href="https://www.openstreetmap.org/user/tyr_asd/diary/39434">about this tool</a></p>
         <p id="status">File API &amp; FileReader API not supported</p>
-        <div id="intro">Drag and drop an (unpacked) osm <a href="http://planet.openstreetmap.org/tile_logs/">tile access log</a> file here!</div>
+        <div id="intro">Drag and drop an (unpacked) osm <a href="http://planet.openstreetmap.org/tile_logs/">tile access log</a> file onto the map or click <input type="file" id="fileElem" accept=".txt" style="display:none" onchange="handleFiles(event, this.files)"> <a href="#"><label for="fileElem">here to select</label></a> one.</div>
         <div id="processing">please wait …</div>
         <div id="legend">
             <h2></h2>
@@ -135,13 +139,14 @@
 
         holder.ondragover = function () { this.className = 'hover'; return false; };
         holder.ondragend = function () { this.className = ''; return false; };
-        holder.ondrop = function (e) {
+        holder.ondrop = function(e) { handleFiles(e, e.dataTransfer.files) }
+        function handleFiles(e, files) {
             this.className = '';
             e.preventDefault();
             intro.className = 'done';
             processing.className = 'started';
 
-            var file = e.dataTransfer.files[0],
+            var file = files[0],
                 reader = new FileReader();
                 
             if (!file.name.match(/\.txt$/)) {
