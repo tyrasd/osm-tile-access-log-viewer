@@ -93,6 +93,11 @@
         #status.success {
             background: #0c0;
         }
+        #flattr {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+        }
     </style>
     <div id="info">
         <h1>OSM tile access logs viewer</h1>
@@ -111,6 +116,9 @@
             <div style="display: inline-block; height: 10px; width: 12px; background-color: rgb(122,1,119);"></div> 10,000 …
         </div>
     </div>
+    <a id="flattr" href="https://flattr.com/submit/auto?user_id=tyr_asd&amp;url=http%3A%2F%2Fosm-tile-access-log-viewer.raifer.tech">
+        <img src="//overpass-turbo.eu/flattr.png">
+    </a>
     <script>
         var holder = document.getElementsByTagName('body')[0],
             state = document.getElementById('status'),
