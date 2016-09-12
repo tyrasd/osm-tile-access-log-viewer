@@ -47,11 +47,22 @@
             padding: 15px 25px;
             background-color: rgba(200,200,0,0.5);
         }
+        #info h1 {
+            margin-top: 0.3em;
+            font-size: 1.42em;
+        }
+        #info .about {
+            text-align: right;
+            margin-top: -8px;
+        }
         #intro.done {
             display: none;
         }
         #processing {
             display: none;
+        }
+        #processing:before {
+            content: '» ';
         }
         #processing.started {
             display: block;
@@ -65,8 +76,9 @@
         #legend.done {
             display: block;
         }
-        #legend h3 {
+        #legend h2 {
             margin-top: 0;
+            font-size: 1.25em;
         }
         #status {
             padding: 5px;
@@ -83,11 +95,13 @@
         }
     </style>
     <div id="info">
+        <h1>OSM tile access logs viewer</h1>
+        <p class="about"><a href="https://www.openstreetmap.org/user/tyr_asd/diary/39434">about this tool</a></p>
         <p id="status">File API &amp; FileReader API not supported</p>
         <div id="intro">Drag and drop an (unpacked) osm <a href="http://planet.openstreetmap.org/tile_logs/">tile access log</a> file here!</div>
         <div id="processing">please wait …</div>
         <div id="legend">
-            <h3></h3>
+            <h2></h2>
             <div style="display: inline-block; height: 10px; width: 12px; background-color: rgb(253,224,221);"></div> 10 … 31<br>
             <div style="display: inline-block; height: 10px; width: 12px; background-color: rgb(252,197,192);"></div> 32 … 99<br>
             <div style="display: inline-block; height: 10px; width: 12px; background-color: rgb(250,159,181);"></div> 100 … 315<br>
@@ -128,7 +142,7 @@
                 alert("unpack the log file first!");
                 return;
             } else {
-                legend.getElementsByTagName('h3')[0].textContent = file.name.match(/(.*)\.txt$/)[1]
+                legend.getElementsByTagName('h2')[0].textContent = file.name.match(/(.*)\.txt$/)[1]
             }
 
             reader.onload = function (event) {
