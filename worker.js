@@ -38,16 +38,17 @@ function handler(e) {
             return
         }
         // render tile
+        var overzoom = e.data.overzoom || 0
         var zoom = e.data.zoom
         var tilePoint = e.data.tilePoint
         var tileSize = e.data.tileSize
         console.time("search data")
         fData = tree.search({
-            minX: tilePoint.x*tileSize,
-            minY: tilePoint.y*tileSize,
-            maxX: (tilePoint.x+1)*tileSize-1,
-            maxY: (tilePoint.y+1)*tileSize-1
-        }).filter(function(d) { return d.zoom === zoom+8 })
+            minX: tilePoint.x*tileSize/Math.pow(2,overzoom),
+            minY: tilePoint.y*tileSize/Math.pow(2,overzoom),
+            maxX: (tilePoint.x+1)*tileSize/Math.pow(2,overzoom)-1,
+            maxY: (tilePoint.y+1)*tileSize/Math.pow(2,overzoom)-1
+        }).filter(function(d) { return d.zoom === zoom+8-overzoom })
         console.timeEnd("search data")
         console.time("render tile")
 
@@ -67,7 +68,9 @@ function handler(e) {
         fData.forEach(function(d) {
             var cat = Math.max(Math.floor(2*Math.log(d.count)/Math.log(10))-1,0)
             cat = Math.min(cat, colorbrewer.length-1)
-            pixels[(d.minY%tileSize) * tileSize + (d.minX%tileSize)] = colorbrewer[cat]
+            for (var y=(d.minY*Math.pow(2,overzoom))%tileSize; y<((d.minY*Math.pow(2,overzoom))%tileSize)+Math.pow(2,overzoom); y++)
+              for (var x=(d.minX*Math.pow(2,overzoom))%tileSize; x<((d.minX*Math.pow(2,overzoom))%tileSize)+Math.pow(2,overzoom); x++)
+                pixels[y*tileSize + x] = colorbrewer[cat]
         })
         console.timeEnd("render tile")
         console.time("send data")

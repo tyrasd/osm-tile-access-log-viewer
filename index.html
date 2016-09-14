@@ -38,6 +38,7 @@
         }
         #map canvas {
             cursor: pointer;
+            opacity: 0.85;
         }
 
         #info {
@@ -102,6 +103,15 @@
             top: 12px;
             right: 16px;
         }
+        #legend a {
+            font-family: monospace;
+        }
+        #legend a.disabled {
+            opacity: 0.6;
+            pointer-events: none;
+            cursor: default;
+            text-decoration: none;
+        }
     </style>
     <div id="info">
         <h1>OSM tile access logs viewer</h1>
@@ -111,6 +121,7 @@
         <div id="processing">please wait …</div>
         <div id="legend">
             <h2></h2>
+            <p>Displaying access stats for zoom level <span id="zoomlevel">…</span> (<a href="#" id="overzoom-plus">-</a>/<a href="#" id="overzoom-minus" class="disabled">+</a>)</p>
             <div style="display: inline-block; height: 10px; width: 12px; background-color: rgb(253,224,221);"></div> 10 … 31<br>
             <div style="display: inline-block; height: 10px; width: 12px; background-color: rgb(252,197,192);"></div> 32 … 99<br>
             <div style="display: inline-block; height: 10px; width: 12px; background-color: rgb(250,159,181);"></div> 100 … 315<br>
@@ -130,6 +141,9 @@
             processing = document.getElementById('processing'),
             legend = document.getElementById('legend');
 
+        var osmTileAccessLogLayer;
+        var overzoom = 0;
+
         if (typeof window.FileReader === 'undefined') {
             state.className = 'fail';
         } else {
@@ -148,7 +162,7 @@
 
             var file = files[0],
                 reader = new FileReader();
-                
+
             if (!file.name.match(/\.txt$/)) {
                 intro.className = '';
                 processing.className = 'done';
@@ -161,16 +175,45 @@
             reader.onload = function (event) {
                 console.timeEnd("read file");
 
-                L.tileLayer.osmTileAccessLogLayer(event.target.result, function() {
+                osmTileAccessLogLayer = L.tileLayer.osmTileAccessLogLayer(event.target.result, function() {
                     processing.className = 'done';
                     legend.className = 'done';
                 }).addTo(map);
+                osmTileAccessLogLayer.overzoom(overzoom);
             };
             console.time("read file");
             reader.readAsArrayBuffer(file);
 
             return false;
-        };
+        }
+
+        function updateZoom() {
+            document.getElementById('zoomlevel').textContent = map.getZoom()+8-overzoom
+        }
+        updateZoom();
+        map.on('zoomend', updateZoom);
+        document.getElementById('overzoom-plus').onclick = function(e) {
+            e.preventDefault();
+            if (overzoom >= 8) return
+            overzoom++
+            osmTileAccessLogLayer.overzoom(overzoom)
+            updateZoom()
+            if (overzoom > 0)
+                document.getElementById('overzoom-minus').className = ''
+            if (overzoom == 8)
+                document.getElementById('overzoom-plus').className = 'disabled'
+        }
+        document.getElementById('overzoom-minus').onclick = function(e) {
+            e.preventDefault();
+            if (overzoom <= 0) return
+            overzoom--
+            osmTileAccessLogLayer.overzoom(overzoom)
+            updateZoom()
+            if (overzoom == 0)
+                document.getElementById('overzoom-minus').className = 'disabled'
+            if (overzoom < 8)
+                document.getElementById('overzoom-plus').className = ''
+        }
     </script>
 
 

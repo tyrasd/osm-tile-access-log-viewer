@@ -2,12 +2,18 @@ L.TileLayer.OsmTileAccessLogLayer = L.TileLayer.Canvas.extend({
     options: {
         async: true,
         maxZoom:19-8,
+        overzoom: 0,
         data: null
     },
     canvasCache: {},
     parserWorker: new Worker('parser.js'),
     numWorkers: navigator.hardwareConcurrency || 1,
     workers: [],
+    overzoom: function (overzoom) {
+        if (this.options.overzoom === overzoom) return
+        this.options.overzoom = overzoom
+        this.redraw()
+    },
     initialize: function (arrayBuffer, doneCallback) {
         var self = this
         console.time("parse data by worker")
@@ -28,19 +34,19 @@ L.TileLayer.OsmTileAccessLogLayer = L.TileLayer.Canvas.extend({
             })
             self._map.on('click', function(e) {
                 var coords = self._map.project(e.latlng)
-                coords.x = Math.round(coords.x)
-                coords.y = Math.round(coords.y)
-                var worker = self.workers[Math.floor(coords.x/256) % self.numWorkers]
+                coords.x = Math.round(coords.x/Math.pow(2,self.options.overzoom))
+                coords.y = Math.round(coords.y/Math.pow(2,self.options.overzoom))
+                var worker = self.workers[Math.floor(coords.x/self.options.tileSize/Math.pow(2,self.options.overzoom)) % self.numWorkers]
                 worker.postMessage({
                     request: 'query',
                     x: coords.x,
                     y: coords.y,
-                    z: self._map.getZoom()+8
+                    z: self._map.getZoom()+8-self.options.overzoom
                 })
                 //worker.onmessage(
                 map.openPopup(
-                    '<p>tile '+(self._map.getZoom()+8)+'/'+coords.x+'/'+coords.y+' was accessed <span id="clicked-count">'+'?'+'</span> times</p>' +
-                    '<img src="https://a.tile.openstreetmap.org/'+(self._map.getZoom()+8)+'/'+coords.x+'/'+coords.y+'.png'+'" />',
+                    '<p>tile '+(self._map.getZoom()+8-self.options.overzoom)+'/'+coords.x+'/'+coords.y+' was accessed <span id="clicked-count">'+'?'+'</span> times</p>' +
+                    '<img src="https://a.tile.openstreetmap.org/'+(self._map.getZoom()+8-self.options.overzoom)+'/'+coords.x+'/'+coords.y+'.png'+'" />',
                     e.latlng, {
                     minWidth:256
                 })
@@ -55,6 +61,7 @@ L.TileLayer.OsmTileAccessLogLayer = L.TileLayer.Canvas.extend({
             } else if (e.data.answer === 'render') {
                 var array = new Uint8Array(e.data.pixels)
                 var canvas = self.canvasCache[e.data.tileId]
+                if (canvas === undefined) return
                 delete self.canvasCache[e.data.tileId]
                 var ctx = canvas.getContext('2d')
                 var imagedata = ctx.getImageData(0, 0, self.options.tileSize, self.options.tileSize)
@@ -71,11 +78,12 @@ L.TileLayer.OsmTileAccessLogLayer = L.TileLayer.Canvas.extend({
     drawTile: function(canvas, tilePoint, zoom) {
         var tileId=tilePoint.x+":"+tilePoint.y+":"+zoom
         this.canvasCache[tileId]=canvas
-        var worker = this.workers[((tilePoint.x % this.numWorkers) + this.numWorkers) % this.numWorkers]
+        var worker = this.workers[((Math.floor(tilePoint.x/Math.pow(2,this.options.overzoom)) % this.numWorkers) + this.numWorkers) % this.numWorkers]
         worker.postMessage({
             request: 'render',
             tileId: tileId,
             zoom: zoom,
+            overzoom: this.options.overzoom,
             tilePoint: tilePoint,
             tileSize: this.options.tileSize
         })
