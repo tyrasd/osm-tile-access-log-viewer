@@ -34,9 +34,9 @@ L.TileLayer.OsmTileAccessLogLayer = L.TileLayer.Canvas.extend({
             })
             self._map.on('click', function(e) {
                 var coords = self._map.project(e.latlng)
-                coords.x = Math.round(coords.x/Math.pow(2,self.options.overzoom))
-                coords.y = Math.round(coords.y/Math.pow(2,self.options.overzoom))
-                var worker = self.workers[Math.floor(coords.x/self.options.tileSize/Math.pow(2,self.options.overzoom)) % self.numWorkers]
+                coords.x = Math.floor(coords.x/Math.pow(2,self.options.overzoom))
+                coords.y = Math.floor(coords.y/Math.pow(2,self.options.overzoom))
+                var worker = self.workers[Math.floor(coords.x/self.options.tileSize) % self.numWorkers]
                 worker.postMessage({
                     request: 'query',
                     x: coords.x,
