@@ -1,4 +1,5 @@
 importScripts('rbush.js')
+importScripts('spectrum.js')
 
 var tree = null
 var requestQueue = []
@@ -52,32 +53,22 @@ function handler(e) {
         console.timeEnd("search data")
         console.time("render tile")
 
-        var colorbrewer = new Uint32Array(new Uint8Array([
-            [253,224,221, 255],
-            [252,197,192, 255],
-            [250,159,181, 255],
-            [247,104,161, 255],
-            [221,52,151, 255],
-            [174,1,126, 255],
-            [122,1,119, 255],
-        ].reduce((a,b) => a.concat(b))
-        ).buffer);
-
-        var pixels = new Array(tileSize*tileSize)
+        var pixels = new Uint32Array(tileSize*tileSize*1)
+        var pixelsView = new DataView(pixels.buffer)
 
         fData.forEach(function(d) {
-            var cat = Math.max(Math.floor(2*Math.log(d.count)/Math.log(10))-1,0)
-            cat = Math.min(cat, colorbrewer.length-1)
+            var color = Math.max(0,1-(Math.log(d.count)-Math.log(10))/(Math.log(10000)-Math.log(10)))
+            color = (parseInt(magma(color).substr(1), 16) << 8) + 255
             for (var y=(d.minY*Math.pow(2,overzoom))%tileSize; y<((d.minY*Math.pow(2,overzoom))%tileSize)+Math.pow(2,overzoom); y++)
               for (var x=(d.minX*Math.pow(2,overzoom))%tileSize; x<((d.minX*Math.pow(2,overzoom))%tileSize)+Math.pow(2,overzoom); x++)
-                pixels[y*tileSize + x] = colorbrewer[cat]
+                pixelsView.setInt32(4*(y*tileSize+x), color, false)
         })
         console.timeEnd("render tile")
         console.time("send data")
         var data = {
           answer: 'render',
           tileId: e.data.tileId,
-          pixels: (new Uint32Array(pixels)).buffer
+          pixels: pixels.buffer
         }
         self.postMessage(data, [data.pixels])
         console.timeEnd("send data")

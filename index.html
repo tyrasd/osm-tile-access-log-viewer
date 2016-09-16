@@ -10,6 +10,7 @@
     <script src="https://unpkg.com/leaflet@0.7.7/dist/leaflet.js"></script>
 
     <script src="leaflet-hash.js"></script>
+    <script src="spectrum.js"></script>
 
 </head>
 <body>
@@ -112,6 +113,23 @@
             cursor: default;
             text-decoration: none;
         }
+        #legend span.min, #legend span.max {
+            position: absolute;
+            line-height: 30px;
+            color: white;
+        }
+        #legend span.min {
+            left: 10px;
+        }
+        #legend span.max {
+            right: 10px;
+        }
+        #legend canvas#spectrum {
+            width: 100%;
+            height: 30px;
+
+        }
+
     </style>
     <div id="info">
         <h1>OSM tile access logs viewer</h1>
@@ -122,13 +140,11 @@
         <div id="legend">
             <h2></h2>
             <p>Displaying access stats for zoom level <span id="zoomlevel">…</span> (<a href="#" id="overzoom-plus">-</a>/<a href="#" id="overzoom-minus" class="disabled">+</a>)</p>
-            <div style="display: inline-block; height: 10px; width: 12px; background-color: rgb(253,224,221);"></div> 10 … 31<br>
-            <div style="display: inline-block; height: 10px; width: 12px; background-color: rgb(252,197,192);"></div> 32 … 99<br>
-            <div style="display: inline-block; height: 10px; width: 12px; background-color: rgb(250,159,181);"></div> 100 … 315<br>
-            <div style="display: inline-block; height: 10px; width: 12px; background-color: rgb(247,104,161);"></div> 316 … 999<br>
-            <div style="display: inline-block; height: 10px; width: 12px; background-color: rgb(221,52,151);"></div> 1,000 … 3,161<br>
-            <div style="display: inline-block; height: 10px; width: 12px; background-color: rgb(174,1,126);"></div> 3,162 … 9,999<br>
-            <div style="display: inline-block; height: 10px; width: 12px; background-color: rgb(122,1,119);"></div> 10,000 …
+            <id style="position:relative;">
+              <span class="min">10</span>
+              <span class="max">10,000</span>
+              <canvas id="spectrum" width="300" height="30"></canvas>
+            </div>
         </div>
     </div>
     <a id="flattr" href="https://flattr.com/submit/auto?user_id=tyr_asd&amp;url=http%3A%2F%2Fosm-tile-access-log-viewer.raifer.tech">
@@ -183,6 +199,19 @@
             };
             console.time("read file");
             reader.readAsArrayBuffer(file);
+
+            // draw legend spectrum
+            var spectrum = document.querySelector('canvas#spectrum');
+            var context = spectrum.getContext('2d');
+            context.lineWidth = 1;
+
+            for (var x=0; x<spectrum.width; x++) {
+                context.beginPath();
+                context.moveTo(x, 0);
+                context.lineTo(x, spectrum.height);
+                context.strokeStyle = magma(1-x/spectrum.width);
+                context.stroke();
+            }
 
             return false;
         }
