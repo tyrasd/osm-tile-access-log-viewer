@@ -116,13 +116,13 @@
         #legend span.min, #legend span.max {
             position: absolute;
             line-height: 30px;
-            color: white;
         }
         #legend span.min {
             left: 10px;
         }
         #legend span.max {
             right: 10px;
+            color: white;
         }
         #legend canvas#spectrum {
             width: 100%;
@@ -204,7 +204,6 @@
             var spectrum = document.querySelector('canvas#spectrum');
             var context = spectrum.getContext('2d');
             context.lineWidth = 1;
-
             for (var x=0; x<spectrum.width; x++) {
                 context.beginPath();
                 context.moveTo(x, 0);
