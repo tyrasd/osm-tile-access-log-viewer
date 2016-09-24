@@ -45,7 +45,7 @@ L.TileLayer.OsmTileAccessLogLayer = L.TileLayer.Canvas.extend({
                 })
                 //worker.onmessage(
                 map.openPopup(
-                    '<p>tile '+(self._map.getZoom()+8-self.options.overzoom)+'/'+coords.x+'/'+coords.y+' was accessed <span id="clicked-count">'+'?'+'</span> times</p>' +
+                    '<p>Tile '+(self._map.getZoom()+8-self.options.overzoom)+'/'+coords.x+'/'+coords.y+' was accessed <span id="clicked-count">'+'? times'+'</span>.</p>' +
                     '<img src="https://a.tile.openstreetmap.org/'+(self._map.getZoom()+8-self.options.overzoom)+'/'+coords.x+'/'+coords.y+'.png'+'" />',
                     e.latlng, {
                     minWidth:256
@@ -69,7 +69,7 @@ L.TileLayer.OsmTileAccessLogLayer = L.TileLayer.Canvas.extend({
                 ctx.putImageData(imagedata, 0, 0)
                 self.tileDrawn(canvas)
             } else if (e.data.answer === 'query') {
-                document.getElementById('clicked-count').textContent = e.data.result || '<10'
+                document.getElementById('clicked-count').textContent = e.data.result ? e.data.result+'times' : 'less than 10 times or from less than 3 different IP addresses'
             } else {
                 throw "Undefined answer returned by worker"
             }
