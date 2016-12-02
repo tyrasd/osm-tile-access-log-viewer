@@ -69,7 +69,7 @@ L.TileLayer.OsmTileAccessLogLayer = L.TileLayer.Canvas.extend({
                 ctx.putImageData(imagedata, 0, 0)
                 self.tileDrawn(canvas)
             } else if (e.data.answer === 'query') {
-                document.getElementById('clicked-count').textContent = e.data.result ? e.data.result+'times' : 'less than 10 times or from less than 3 different IP addresses'
+                document.getElementById('clicked-count').textContent = e.data.result ? e.data.result+' times' : 'less than 10 times or from less than 3 different IP addresses'
             } else {
                 throw "Undefined answer returned by worker"
             }
