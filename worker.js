@@ -1,4 +1,4 @@
-importScripts('rbush.js')
+importScripts('kdbush.js')
 importScripts('spectrum.js')
 
 var tree = null
@@ -16,10 +16,8 @@ function handler(e) {
         var data = []
         for (var i=0; i<viewX.length; i++) {
             data.push({
-                minX: viewX[i],
-                maxX: viewX[i],
-                minY: viewY[i],
-                maxY: viewY[i],
+                x: viewX[i],
+                y: viewY[i],
                 zoom: viewZ[i],
                 count: viewCount[i]
             })
@@ -27,8 +25,7 @@ function handler(e) {
         e.data = null; viewX = null; viewY = null; viewZ = null; viewCount = null // don't need
         console.timeEnd("load data")
         console.time("build indices")
-        tree = rbush()
-        tree.load(data)
+        tree = kdbush(data, p => p.x, p => p.y, 64, Int32Array)
         console.timeEnd("build indices")
         self.postMessage('building spatial index')
         requestQueue.forEach(handler)
@@ -44,12 +41,13 @@ function handler(e) {
         var tilePoint = e.data.tilePoint
         var tileSize = e.data.tileSize
         console.time("search data")
-        fData = tree.search({
-            minX: tilePoint.x*tileSize/Math.pow(2,overzoom),
-            minY: tilePoint.y*tileSize/Math.pow(2,overzoom),
-            maxX: (tilePoint.x+1)*tileSize/Math.pow(2,overzoom)-1,
-            maxY: (tilePoint.y+1)*tileSize/Math.pow(2,overzoom)-1
-        }).filter(function(d) { return d.zoom === zoom+8-overzoom })
+        fData = tree.range(
+            tilePoint.x*tileSize/Math.pow(2,overzoom),
+            tilePoint.y*tileSize/Math.pow(2,overzoom),
+            (tilePoint.x+1)*tileSize/Math.pow(2,overzoom)-1,
+            (tilePoint.y+1)*tileSize/Math.pow(2,overzoom)-1
+        ).map(id => tree.points[id])
+        .filter(function(d) { return d.zoom === zoom+8-overzoom })
         console.timeEnd("search data")
         console.time("render tile")
 
@@ -59,8 +57,8 @@ function handler(e) {
         fData.forEach(function(d) {
             var color = Math.max(0,1-(Math.log(d.count)-Math.log(10))/(Math.log(10000)-Math.log(10)))
             color = (parseInt(magma(color).substr(1), 16) << 8) + 255
-            for (var y=(d.minY*Math.pow(2,overzoom))%tileSize; y<((d.minY*Math.pow(2,overzoom))%tileSize)+Math.pow(2,overzoom); y++)
-              for (var x=(d.minX*Math.pow(2,overzoom))%tileSize; x<((d.minX*Math.pow(2,overzoom))%tileSize)+Math.pow(2,overzoom); x++)
+            for (var y=(d.y*Math.pow(2,overzoom))%tileSize; y<((d.y*Math.pow(2,overzoom))%tileSize)+Math.pow(2,overzoom); y++)
+              for (var x=(d.x*Math.pow(2,overzoom))%tileSize; x<((d.x*Math.pow(2,overzoom))%tileSize)+Math.pow(2,overzoom); x++)
                 pixelsView.setInt32(4*(y*tileSize+x), color, false)
         })
         console.timeEnd("render tile")
@@ -77,12 +75,11 @@ function handler(e) {
             requestQueue.push(e)
             return
         }
-        fData = tree.search({
-            minX: e.data.x,
-            maxX: e.data.x,
-            minY: e.data.y,
-            maxY: e.data.y
-        }).filter(function(d) { return d.zoom === e.data.z })
+        fData = tree.range(
+            e.data.x, e.data.y,
+            e.data.x, e.data.y
+        ).map(id => tree.points[id])
+        .filter(function(d) { return d.zoom === e.data.z })
         self.postMessage({
             answer: 'query',
             x: e.data.x,
