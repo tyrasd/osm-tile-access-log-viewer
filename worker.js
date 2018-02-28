@@ -4,28 +4,23 @@ importScripts('spectrum.js')
 var tree = null
 var requestQueue = []
 
+var viewX = null
+var viewY = null
+var viewZ = null
+var viewCount = null
+var indices = null
+
 self.addEventListener('message', handler, false)
 function handler(e) {
     if (e.data.request === 'init') {
         // initialize with file content
-        console.time("load data")
-        var viewX = new Uint32Array(e.data.x)
-        var viewY = new Uint32Array(e.data.y)
-        var viewZ = new Uint8Array(e.data.z)
-        var viewCount = new Uint32Array(e.data.count)
-        var data = []
-        for (var i=0; i<viewX.length; i++) {
-            data.push({
-                x: viewX[i],
-                y: viewY[i],
-                zoom: viewZ[i],
-                count: viewCount[i]
-            })
-        }
-        e.data = null; viewX = null; viewY = null; viewZ = null; viewCount = null // don't need
-        console.timeEnd("load data")
         console.time("build indices")
-        tree = kdbush(data, p => p.x, p => p.y, 64, Int32Array)
+        viewX = new Uint32Array(e.data.x)
+        viewY = new Uint32Array(e.data.y)
+        viewZ = new Uint8Array(e.data.z)
+        viewCount = new Uint32Array(e.data.count)
+        indices = new Uint32Array(e.data.indices)
+        tree = kdbush(indices, function(i) {return viewX[i]}, function(i) {return viewY[i]}, 256, Int32Array)
         console.timeEnd("build indices")
         self.postMessage('building spatial index')
         requestQueue.forEach(handler)
@@ -41,24 +36,26 @@ function handler(e) {
         var tilePoint = e.data.tilePoint
         var tileSize = e.data.tileSize
         console.time("search data")
-        fData = tree.range(
+        fDataIndices = tree.range(
             tilePoint.x*tileSize/Math.pow(2,overzoom),
             tilePoint.y*tileSize/Math.pow(2,overzoom),
             (tilePoint.x+1)*tileSize/Math.pow(2,overzoom)-1,
             (tilePoint.y+1)*tileSize/Math.pow(2,overzoom)-1
-        ).map(id => tree.points[id])
-        .filter(function(d) { return d.zoom === zoom+8-overzoom })
+        ).filter(function(index) { return viewZ[index] === zoom+8-overzoom })
         console.timeEnd("search data")
         console.time("render tile")
 
         var pixels = new Uint32Array(tileSize*tileSize*1)
         var pixelsView = new DataView(pixels.buffer)
 
-        fData.forEach(function(d) {
-            var color = Math.max(0,1-(Math.log(d.count)-Math.log(10))/(Math.log(10000)-Math.log(10)))
+        fDataIndices.forEach(function(index) {
+            var count = viewCount[index]
+            var dataX = viewX[index]
+            var dataY = viewY[index]
+            var color = Math.max(0,1-(Math.log(count)-Math.log(10))/(Math.log(10000)-Math.log(10)))
             color = (parseInt(magma(color).substr(1), 16) << 8) + 255
-            for (var y=(d.y*Math.pow(2,overzoom))%tileSize; y<((d.y*Math.pow(2,overzoom))%tileSize)+Math.pow(2,overzoom); y++)
-              for (var x=(d.x*Math.pow(2,overzoom))%tileSize; x<((d.x*Math.pow(2,overzoom))%tileSize)+Math.pow(2,overzoom); x++)
+            for (var y=(dataY*Math.pow(2,overzoom))%tileSize; y<((dataY*Math.pow(2,overzoom))%tileSize)+Math.pow(2,overzoom); y++)
+              for (var x=(dataX*Math.pow(2,overzoom))%tileSize; x<((dataX*Math.pow(2,overzoom))%tileSize)+Math.pow(2,overzoom); x++)
                 pixelsView.setInt32(4*(y*tileSize+x), color, false)
         })
         console.timeEnd("render tile")
@@ -75,17 +72,16 @@ function handler(e) {
             requestQueue.push(e)
             return
         }
-        fData = tree.range(
+        fDataIndices = tree.range(
             e.data.x, e.data.y,
             e.data.x, e.data.y
-        ).map(id => tree.points[id])
-        .filter(function(d) { return d.zoom === e.data.z })
+        ).filter(function(index) { return viewZ[index] === e.data.z })
         self.postMessage({
             answer: 'query',
             x: e.data.x,
             y: e.data.y,
             z: e.data.z,
-            result: (fData[0] || {}).count
+            result: fDataIndices[0] && viewCount[fDataIndices[0]]
         })
     } else {
         throw "worker received unknown request"
