@@ -6,7 +6,6 @@ self.addEventListener('message', function(e) {
     var dataY = Array.apply(null, new Array(e.data.numWorkers)).map(function() {return new Uint32Array(approxLength)})
     var dataZ = Array.apply(null, new Array(e.data.numWorkers)).map(function() {return new Uint8Array(approxLength)})
     var dataC = Array.apply(null, new Array(e.data.numWorkers)).map(function() {return new Uint32Array(approxLength)})
-    var dataI = Array.apply(null, new Array(e.data.numWorkers)).map(function() {return new Uint32Array(approxLength)})
     var currentInt = 0
     var currentCoords = [0,0,0]
     var currentCoordsIndex = 0
@@ -23,7 +22,6 @@ self.addEventListener('message', function(e) {
             dataY[bin][binCurrentIndex] = currentCoords[2]
             dataZ[bin][binCurrentIndex] = currentCoords[0]
             dataC[bin][binCurrentIndex] = currentInt
-            dataI[bin][binCurrentIndex] = binCurrentIndex
             currentIndex[bin]++;
             if (binCurrentIndex >= approxLength) {
                 // we need to make our data arrays a bit bigger to accomodate all data
@@ -38,7 +36,6 @@ self.addEventListener('message', function(e) {
                 dataY[bin] = expand(dataY[bin], approxLength, Uint32Array)
                 dataZ[bin] = expand(dataZ[bin], approxLength, Uint8Array)
                 dataC[bin] = expand(dataC[bin], approxLength, Uint32Array)
-                dataI[bin] = expand(dataI[bin], approxLength, Uint32Array)
             }
 
             currentCoordsIndex = 0
@@ -55,16 +52,14 @@ self.addEventListener('message', function(e) {
     dataY = dataY.map(function(d,i) {return d.slice(0, currentIndex[i]-1).buffer})
     dataZ = dataZ.map(function(d,i) {return d.slice(0, currentIndex[i]-1).buffer})
     dataC = dataC.map(function(d,i) {return d.slice(0, currentIndex[i]-1).buffer})
-    dataI = dataI.map(function(d,i) {return d.slice(0, currentIndex[i]-1).buffer})
     self.postMessage(
         dataX.map(function(_, index) {return {
             x: dataX[index],
             y: dataY[index],
             z: dataZ[index],
-            count: dataC[index],
-            indices: dataI[index]
+            count: dataC[index]
         }}),
-        [dataX, dataY, dataZ, dataC, dataI].reduce(function (a,b) {return a.concat(b)}, [])
+        [dataX, dataY, dataZ, dataC].reduce(function (a,b) {return a.concat(b)}, [])
     )
     self.postMessage('build spatial index')
 }, false)

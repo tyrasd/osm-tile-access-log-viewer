@@ -1,4 +1,4 @@
-importScripts('kdbush.js')
+importScripts('flatbush.js')
 importScripts('spectrum.js')
 
 var tree = null
@@ -8,7 +8,6 @@ var viewX = null
 var viewY = null
 var viewZ = null
 var viewCount = null
-var indices = null
 
 self.addEventListener('message', handler, false)
 function handler(e) {
@@ -19,8 +18,11 @@ function handler(e) {
         viewY = new Uint32Array(e.data.y)
         viewZ = new Uint8Array(e.data.z)
         viewCount = new Uint32Array(e.data.count)
-        indices = new Uint32Array(e.data.indices)
-        tree = kdbush(indices, function(i) {return viewX[i]}, function(i) {return viewY[i]}, 256, Int32Array)
+        tree = new Flatbush(viewCount.length, undefined, Uint32Array)
+        for (var i=0; i<viewCount.length; i++) {
+          tree.add(viewX[i], viewY[i], viewX[i], viewY[i])
+        }
+        tree.finish()
         console.timeEnd("build indices")
         self.postMessage('building spatial index')
         requestQueue.forEach(handler)
@@ -36,12 +38,14 @@ function handler(e) {
         var tilePoint = e.data.tilePoint
         var tileSize = e.data.tileSize
         console.time("search data")
-        fDataIndices = tree.range(
+        fDataIndices = []
+        tree.search(
             tilePoint.x*tileSize/Math.pow(2,overzoom),
             tilePoint.y*tileSize/Math.pow(2,overzoom),
             (tilePoint.x+1)*tileSize/Math.pow(2,overzoom)-1,
-            (tilePoint.y+1)*tileSize/Math.pow(2,overzoom)-1
-        ).filter(function(index) { return viewZ[index] === zoom+8-overzoom })
+            (tilePoint.y+1)*tileSize/Math.pow(2,overzoom)-1,
+            function(index) { if (viewZ[index] === zoom+8-overzoom) fDataIndices.push(index) }
+        )
         console.timeEnd("search data")
         console.time("render tile")
 
@@ -72,10 +76,12 @@ function handler(e) {
             requestQueue.push(e)
             return
         }
-        fDataIndices = tree.range(
+        fDataIndices = []
+        tree.search(
             e.data.x, e.data.y,
-            e.data.x, e.data.y
-        ).filter(function(index) { return viewZ[index] === e.data.z })
+            e.data.x, e.data.y,
+            function(index) { if (viewZ[index] === e.data.z) fDataIndices.push(index) }
+        )
         self.postMessage({
             answer: 'query',
             x: e.data.x,
