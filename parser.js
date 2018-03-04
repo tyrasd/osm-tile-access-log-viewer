@@ -28,8 +28,8 @@ self.addEventListener('message', function(e) {
             if (binCurrentIndex >= approxLength) {
                 // we need to make our data arrays a bit bigger to accomodate all data
                 console.log("expand internal data arrays")
-                function expand(oldData, newLenght, ArrayType) {
-                    var temp = new ArrayType(newLenght)
+                function expand(oldData, newLength, ArrayType) {
+                    var temp = new ArrayType(newLength)
                     temp.set(oldData)
                     return temp
                 }
