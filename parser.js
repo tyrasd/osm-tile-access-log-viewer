@@ -13,8 +13,8 @@ self.addEventListener('message', function(e) {
     var currentIndex = Array.apply(null, new Array(e.data.numWorkers)).map(function() {return 0})
     for (var i = 0; i<view.length; i++) {
         switch (view[i]) {
-        default:
-          currentInt = currentInt*10 + (view[i] - 48 /*'0'*/)
+        default: // 0-9
+          currentInt = currentInt*10 + (view[i] & 0x0f)
         break;
         case 10: // '\n'
             var bin = ~~(currentCoords[1]/256) % e.data.numWorkers
