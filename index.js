@@ -5,6 +5,7 @@ L.TileLayer.OsmTileAccessLogLayer = L.TileLayer.Canvas.extend({
         overzoom: 0,
         data: null
     },
+    maxCountByZoom: {},
     canvasCache: {},
     parserWorker: new Worker('parser.js'),
     numWorkers: navigator.hardwareConcurrency || 1,
@@ -28,8 +29,15 @@ L.TileLayer.OsmTileAccessLogLayer = L.TileLayer.Canvas.extend({
             console.timeEnd("parse data by worker")
 
             self.workers.forEach(function(worker, index) {
-                e.data[index].request = 'init'
-                worker.postMessage(e.data[index], [e.data[index].x, e.data[index].y, e.data[index].z, e.data[index].count])
+                var workerData = e.data[index]
+                workerData.request = 'init'
+                for (var zoom in workerData.maxCountByZoom) {
+                    workerData.maxCountByZoom[zoom] = Number(workerData.maxCountByZoom[zoom].toPrecision(1));
+                }
+                self.maxCountByZoom = workerData.maxCountByZoom
+                document.getElementById('maxCount').textContent = (self.maxCountByZoom[8 + self._map.getZoom() - self.options.overzoom] || '')
+
+                worker.postMessage(workerData, [workerData.x, workerData.y, workerData.z, workerData.count])
                 worker.onmessage = tileHandler
             })
             self._map.on('click', function(e) {
@@ -87,6 +95,7 @@ L.TileLayer.OsmTileAccessLogLayer = L.TileLayer.Canvas.extend({
             tilePoint: tilePoint,
             tileSize: this.options.tileSize
         })
+        document.getElementById('maxCount').textContent = (this.maxCountByZoom[8 + zoom - this.options.overzoom] || '')
     }
 });
 L.tileLayer.osmTileAccessLogLayer = function(data, doneCallback) {

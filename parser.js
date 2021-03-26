@@ -7,6 +7,7 @@ self.addEventListener('message', function(e) {
     var dataZ = Array.apply(null, new Array(e.data.numWorkers)).map(function() {return new Uint8Array(approxLength)})
     var dataC = Array.apply(null, new Array(e.data.numWorkers)).map(function() {return new Uint32Array(approxLength)})
     var dataI = Array.apply(null, new Array(e.data.numWorkers)).map(function() {return new Uint32Array(approxLength)})
+    var maxCountByZoom = {}
     var currentInt = 0
     var currentCoords = [0,0,0]
     var currentCoordsIndex = 0
@@ -34,6 +35,9 @@ self.addEventListener('message', function(e) {
       dataZ[bin][binCurrentIndex] = currentCoords[0]
       dataC[bin][binCurrentIndex] = currentInt
       dataI[bin][binCurrentIndex] = binCurrentIndex
+      if (currentInt > (maxCountByZoom[currentCoords[0]] || -1)) {
+        maxCountByZoom[currentCoords[0]] = currentInt
+      }
       currentIndex[bin]++;
       currentCoordsIndex = 0
       currentInt = 0
@@ -65,6 +69,7 @@ self.addEventListener('message', function(e) {
             y: dataY[index],
             z: dataZ[index],
             count: dataC[index],
+            maxCountByZoom: maxCountByZoom,
             indices: dataI[index]
         }}),
         [dataX, dataY, dataZ, dataC, dataI].reduce(function (a,b) {return a.concat(b)}, [])

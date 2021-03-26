@@ -9,6 +9,7 @@ var viewY = null
 var viewZ = null
 var viewCount = null
 var indices = null
+var maxCountByZoom = null
 
 self.addEventListener('message', handler, false)
 function handler(e) {
@@ -20,6 +21,7 @@ function handler(e) {
         viewZ = new Uint8Array(e.data.z)
         viewCount = new Uint32Array(e.data.count)
         indices = new Uint32Array(e.data.indices)
+        maxCountByZoom = e.data.maxCountByZoom
         tree = new KDBush(indices, function(i) {return viewX[i]}, function(i) {return viewY[i]}, 256, Uint32Array)
         console.timeEnd("build indices")
         self.postMessage('building spatial index')
@@ -52,7 +54,8 @@ function handler(e) {
             var count = viewCount[index]
             var dataX = viewX[index]
             var dataY = viewY[index]
-            var color = Math.max(0,1-(Math.log(count)-Math.log(10))/(Math.log(10000)-Math.log(10)))
+            var dataZ = viewZ[index]
+            var color = Math.max(0,1-(Math.log(count)-Math.log(10))/(Math.log(maxCountByZoom[dataZ])-Math.log(10)))
             color = (parseInt(magma(color).substr(1), 16) << 8) + 255
             for (var y=(dataY*Math.pow(2,overzoom))%tileSize; y<((dataY*Math.pow(2,overzoom))%tileSize)+Math.pow(2,overzoom); y++)
               for (var x=(dataX*Math.pow(2,overzoom))%tileSize; x<((dataX*Math.pow(2,overzoom))%tileSize)+Math.pow(2,overzoom); x++)
