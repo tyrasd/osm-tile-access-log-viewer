@@ -14,12 +14,6 @@ self.addEventListener('message', function(e) {
     var appendLine = function() {
       var bin = ~~(currentCoords[1]/256) % e.data.numWorkers
       var binCurrentIndex = currentIndex[bin]
-      dataX[bin][binCurrentIndex] = currentCoords[1]
-      dataY[bin][binCurrentIndex] = currentCoords[2]
-      dataZ[bin][binCurrentIndex] = currentCoords[0]
-      dataC[bin][binCurrentIndex] = currentInt
-      dataI[bin][binCurrentIndex] = binCurrentIndex
-      currentIndex[bin]++;
       if (binCurrentIndex >= approxLength) {
           // we need to make our data arrays a bit bigger to accomodate all data
           console.log("expand internal data arrays")
@@ -35,6 +29,12 @@ self.addEventListener('message', function(e) {
           dataC[bin] = expand(dataC[bin], approxLength, Uint32Array)
           dataI[bin] = expand(dataI[bin], approxLength, Uint32Array)
       }
+      dataX[bin][binCurrentIndex] = currentCoords[1]
+      dataY[bin][binCurrentIndex] = currentCoords[2]
+      dataZ[bin][binCurrentIndex] = currentCoords[0]
+      dataC[bin][binCurrentIndex] = currentInt
+      dataI[bin][binCurrentIndex] = binCurrentIndex
+      currentIndex[bin]++;
       currentCoordsIndex = 0
       currentInt = 0
     }
