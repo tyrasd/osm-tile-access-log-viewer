@@ -11,46 +11,49 @@ self.addEventListener('message', function(e) {
     var currentCoords = [0,0,0]
     var currentCoordsIndex = 0
     var currentIndex = Array.apply(null, new Array(e.data.numWorkers)).map(function() {return 0})
+    var appendLine = function() {
+      var bin = ~~(currentCoords[1]/256) % e.data.numWorkers
+      var binCurrentIndex = currentIndex[bin]
+      dataX[bin][binCurrentIndex] = currentCoords[1]
+      dataY[bin][binCurrentIndex] = currentCoords[2]
+      dataZ[bin][binCurrentIndex] = currentCoords[0]
+      dataC[bin][binCurrentIndex] = currentInt
+      dataI[bin][binCurrentIndex] = binCurrentIndex
+      currentIndex[bin]++;
+      if (binCurrentIndex >= approxLength) {
+          // we need to make our data arrays a bit bigger to accomodate all data
+          console.log("expand internal data arrays")
+          function expand(oldData, newLength, ArrayType) {
+              var temp = new ArrayType(newLength)
+              temp.set(oldData)
+              return temp
+          }
+          approxLength = ~~(approxLength * 1.2)
+          dataX[bin] = expand(dataX[bin], approxLength, Uint32Array)
+          dataY[bin] = expand(dataY[bin], approxLength, Uint32Array)
+          dataZ[bin] = expand(dataZ[bin], approxLength, Uint8Array)
+          dataC[bin] = expand(dataC[bin], approxLength, Uint32Array)
+          dataI[bin] = expand(dataI[bin], approxLength, Uint32Array)
+      }
+      currentCoordsIndex = 0
+      currentInt = 0
+    }
     for (var i = 0; i<view.length; i++) {
         switch (view[i]) {
         default: // 0-9
           currentInt = currentInt*10 + (view[i] & 0x0f)
         break;
         case 10: // '\n'
-            var bin = ~~(currentCoords[1]/256) % e.data.numWorkers
-            var binCurrentIndex = currentIndex[bin]
-            dataX[bin][binCurrentIndex] = currentCoords[1]
-            dataY[bin][binCurrentIndex] = currentCoords[2]
-            dataZ[bin][binCurrentIndex] = currentCoords[0]
-            dataC[bin][binCurrentIndex] = currentInt
-            dataI[bin][binCurrentIndex] = binCurrentIndex
-            currentIndex[bin]++;
-            if (binCurrentIndex >= approxLength) {
-                // we need to make our data arrays a bit bigger to accomodate all data
-                console.log("expand internal data arrays")
-                function expand(oldData, newLength, ArrayType) {
-                    var temp = new ArrayType(newLength)
-                    temp.set(oldData)
-                    return temp
-                }
-                approxLength = ~~(approxLength * 1.2)
-                dataX[bin] = expand(dataX[bin], approxLength, Uint32Array)
-                dataY[bin] = expand(dataY[bin], approxLength, Uint32Array)
-                dataZ[bin] = expand(dataZ[bin], approxLength, Uint8Array)
-                dataC[bin] = expand(dataC[bin], approxLength, Uint32Array)
-                dataI[bin] = expand(dataI[bin], approxLength, Uint32Array)
-            }
-
-            currentCoordsIndex = 0
-            currentInt = 0
+          appendLine()
         break;
         case 32: // ' '
         case 47: // '/'
-            currentCoords[currentCoordsIndex++] = currentInt
-            currentInt = 0
+          currentCoords[currentCoordsIndex++] = currentInt
+          currentInt = 0
         break;
         }
     }
+    appendLine()
     dataX = dataX.map(function(d,i) {return d.slice(0, currentIndex[i]-1).buffer})
     dataY = dataY.map(function(d,i) {return d.slice(0, currentIndex[i]-1).buffer})
     dataZ = dataZ.map(function(d,i) {return d.slice(0, currentIndex[i]-1).buffer})
