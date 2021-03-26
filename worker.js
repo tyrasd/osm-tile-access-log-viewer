@@ -20,7 +20,7 @@ function handler(e) {
         viewZ = new Uint8Array(e.data.z)
         viewCount = new Uint32Array(e.data.count)
         indices = new Uint32Array(e.data.indices)
-        tree = kdbush(indices, function(i) {return viewX[i]}, function(i) {return viewY[i]}, 256, Int32Array)
+        tree = new KDBush(indices, function(i) {return viewX[i]}, function(i) {return viewY[i]}, 256, Uint32Array)
         console.timeEnd("build indices")
         self.postMessage('building spatial index')
         requestQueue.forEach(handler)
